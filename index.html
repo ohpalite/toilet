@@ -303,6 +303,7 @@
         let selectedCluster = null;
         let myRoomName = null;
         let timerInterval = null;
+        let unsubscribeFirebase = null; // Added to fix zombie listeners
         
         let state = {
             isOccupied: false,
@@ -537,6 +538,14 @@
             dbPath = `exam_map_state/cluster_${cluster.id}`;
             myRoomName = null; 
             
+            // Disconnect any existing listener to prevent cross-contamination
+            if (unsubscribeFirebase) {
+                unsubscribeFirebase();
+            }
+            
+            // Clear local state instantly
+            state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
+            
             document.getElementById('display-toilet-name').textContent = cluster.toilet;
             
             dynamicRoomsContainer.innerHTML = '';
@@ -558,7 +567,7 @@
             });
 
             const toiletRef = ref(db, dbPath);
-            onValue(toiletRef, (snapshot) => {
+            unsubscribeFirebase = onValue(toiletRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     state = data;

@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Exam Toilet Monitor - Live Sync</title>
+    <title>Exam Toilet Monitor - Map View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
         body {
             background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
             overscroll-behavior: none;
-            -webkit-tap-highlight-color: transparent;
         }
 
         @keyframes slideIn {
@@ -21,11 +20,11 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        .animate-slide-in { animation: slideIn 0.35s ease-out forwards; }
+        .animate-slide-in { animation: slideIn 0.4s ease-out forwards; }
         .glass-panel {
-            background: rgba(255, 255, 255, 0.88);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .hidden { display: none !important; }
@@ -40,17 +39,16 @@
             flex-direction: column;
             gap: 10px;
             pointer-events: none;
-            max-width: 90vw;
         }
         .toast {
+            background: #1f2937;
             color: white;
-            padding: 14px 20px;
+            padding: 16px 24px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.2);
-            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-weight: 500;
             transform: translateX(120%);
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            pointer-events: auto;
         }
         .toast.show { transform: translateX(0); }
 
@@ -60,7 +58,6 @@
             border: 2px solid #e5e7eb;
             background-color: #f9fafb;
             cursor: pointer;
-            user-select: none;
         }
         .room-btn:hover:not(:disabled) {
             border-color: #cbd5e1;
@@ -70,123 +67,46 @@
         .room-btn:active:not(:disabled) {
             transform: translateY(0);
         }
-        .room-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .room-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .room-btn.my-room {
-            border-color: #2563eb;
+            border-color: #3b82f6;
             background-color: #eff6ff;
-            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.25);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.2);
         }
-        .room-btn.my-room .title { color: #1d4ed8; font-weight: 900; }
+        .room-btn.my-room .title { color: #1d4ed8; }
 
         .room-btn.other-room {
-            border-color: #dc2626;
+            border-color: #ef4444;
             background-color: #fef2f2;
-            animation: pulse-red-border 1.8s infinite;
+            animation: pulse-red-border 2s infinite;
         }
-        .room-btn.other-room .title { color: #b91c1c; font-weight: 900; }
+        .room-btn.other-room .title { color: #b91c1c; }
 
         @keyframes pulse-red-border {
-            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
-            70% { box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         .status-widget {
-            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
-            user-select: none;
         }
         .status-widget:hover:not(.disabled) {
-            transform: scale(1.015);
-            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.12));
-        }
-        .status-widget:active:not(.disabled) {
-            transform: scale(0.99);
+            transform: scale(1.02);
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.1));
         }
 
         .status-vacant { background: linear-gradient(135deg, #10b981, #059669); border-color: #047857; }
-        .status-me { background: linear-gradient(135deg, #2563eb, #1d4ed8); border-color: #1e3a8a; }
-        .status-other { background: linear-gradient(135deg, #dc2626, #991b1b); border-color: #7f1d1d; }
-
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .status-me { background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: #1e3a8a; }
+        .status-other { background: linear-gradient(135deg, #ef4444, #b91c1c); border-color: #7f1d1d; cursor: not-allowed; opacity: 0.95; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans text-gray-800 antialiased selection:bg-blue-500 selection:text-white">
+<body class="min-h-screen flex flex-col font-sans text-gray-800">
 
     <!-- Toast Notifications -->
     <div id="toast-container"></div>
-
-    <!-- Firebase Rules Warning Banner (Shows automatically if permission denied) -->
-    <div id="firebase-permission-alert" class="hidden bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs sm:text-sm p-3 sm:p-4 sticky top-0 z-[120] shadow-xl">
-        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                </div>
-                <div>
-                    <span class="font-extrabold tracking-wide uppercase text-amber-200">Firebase Permission Denied:</span>
-                    <span class="font-medium ml-1">Realtime Database Security Rules are blocking data sync. Updates cannot sync across devices until rules are enabled.</span>
-                </div>
-            </div>
-            <button id="btn-show-rules-modal" class="bg-white text-red-700 hover:bg-red-50 font-extrabold px-4 py-2 rounded-xl text-xs sm:text-sm shadow-md transition-all flex-shrink-0 cursor-pointer">
-                How to Fix in 30 Seconds
-            </button>
-        </div>
-    </div>
-
-    <!-- Firebase Rules Instruction Modal -->
-    <div id="rules-modal" class="fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/80 backdrop-blur-sm transition-opacity hidden p-4">
-        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-lg w-full transform transition-all animate-slide-in flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    </div>
-                    <h3 class="text-xl font-black text-gray-900">Enable Live Sync across Devices</h3>
-                </div>
-                <button id="btn-close-rules-modal" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            
-            <p class="text-sm text-gray-600 mb-4">
-                Firebase Realtime Database requires public read/write security rules for GitHub Pages deployment. Please follow these quick steps:
-            </p>
-
-            <ol class="space-y-3 text-xs sm:text-sm text-gray-700 mb-5 list-decimal list-inside bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                <li class="font-medium">Open <a href="https://console.firebase.google.com/project/toilet-movement/database/toilet-movement-default-rtdb/rules" target="_blank" class="text-blue-600 underline font-bold">Firebase Console > Realtime Database > Rules</a>.</li>
-                <li class="font-medium">Replace the contents with this exact JSON:
-                    <div class="mt-2 bg-gray-900 text-emerald-400 font-mono p-3 rounded-xl text-xs relative group">
-                        <pre id="rules-code-block">{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}</pre>
-                        <button id="btn-copy-rules" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-md transition-colors">
-                            Copy JSON
-                        </button>
-                    </div>
-                </li>
-                <li class="font-medium">Click <strong class="text-blue-600 font-extrabold">Publish</strong> in the Firebase Console.</li>
-            </ol>
-
-            <div class="flex gap-3">
-                <button id="btn-test-sync" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    Test Live Connection Now
-                </button>
-                <button id="btn-dismiss-rules-modal" class="py-3 px-5 rounded-xl font-bold text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Admin Login Modal -->
     <div id="login-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/80 backdrop-blur-sm transition-opacity hidden">
@@ -214,13 +134,13 @@
             <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-2">Edit Rooms</h3>
             <p class="text-xs sm:text-sm text-gray-500 mb-6" id="edit-modal-subtitle">Update room names for this cluster.</p>
             
-            <div id="edit-room-inputs" class="flex flex-col gap-3 mb-6 max-h-[50vh] overflow-y-auto px-1 custom-scrollbar">
+            <div id="edit-room-inputs" class="flex flex-col gap-4 mb-6 max-h-[50vh] overflow-y-auto px-2">
                 <!-- Inputs injected here dynamically -->
             </div>
                 
             <div class="flex gap-3">
                 <button id="btn-cancel-edit" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancel</button>
-                <button id="btn-save-edit" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">Save & Sync</button>
+                <button id="btn-save-edit" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">Save</button>
             </div>
         </div>
     </div>
@@ -234,14 +154,6 @@
                 </svg>
                 <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">System Setup</h1>
                 <p class="text-blue-100 mt-1 text-xs sm:text-sm font-medium">Select your assigned invigilation cluster.</p>
-                
-                <!-- Live Sync Status Indicator in Setup Header -->
-                <div class="mt-3 flex justify-center">
-                    <div id="setup-sync-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm border border-white/20">
-                        <span id="setup-sync-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                        <span id="setup-sync-text">Connecting to Live Server...</span>
-                    </div>
-                </div>
             </div>
             
             <div class="p-4 sm:p-6 flex-1 overflow-y-auto bg-gray-50 custom-scrollbar">
@@ -264,25 +176,19 @@
         <header id="status-banner" class="glass-panel shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-white/90 backdrop-blur-md">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 text-center md:text-left">
                 <div class="w-full md:w-auto">
-                    <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1.5 sm:mb-2">
-                        <span class="bg-gray-800 text-white text-sm sm:text-lg font-black px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full tracking-wider uppercase shadow-sm" id="display-toilet-name">Toilet</span>
-                        
-                        <!-- Live Sync Indicator -->
-                        <div id="app-sync-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors bg-amber-50 border-amber-200 text-amber-700" title="Live status sync with other devices">
-                            <span id="app-sync-dot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                            <span id="app-sync-text">Connecting...</span>
-                        </div>
+                    <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2 mb-1.5 sm:mb-2">
+                        <span class="bg-gray-800 text-white text-sm sm:text-lg font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full tracking-wider uppercase shadow-sm" id="display-toilet-name">Toilet</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-gray-900" id="banner-title">Select Exam Room</h1>
+                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900" id="banner-title">Select Exam Room</h1>
                     <p class="text-sm sm:text-base font-semibold text-gray-500 mt-0.5" id="banner-subtitle">Tap your assigned room on the dashboard below to begin.</p>
                 </div>
                 
                 <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full md:w-auto justify-center md:justify-end mt-1 md:mt-0">
-                    <div id="current-room-container" class="hidden items-center justify-center gap-2 bg-gray-100/90 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-gray-200 shadow-inner w-full sm:w-auto">
-                        <span class="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-gray-500">My Exam Room:</span>
+                    <div id="current-room-container" class="hidden items-center justify-center gap-2 bg-gray-100/80 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-gray-200 shadow-inner w-full sm:w-auto">
+                        <span class="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-gray-500">Current Room:</span>
                         <span id="current-room-text" class="text-base sm:text-lg font-black text-blue-700"></span>
                     </div>
-                    <button id="btn-reset" class="hidden w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border-2 border-gray-200 shadow-sm hover:shadow cursor-pointer">
+                    <button id="btn-reset" class="hidden w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border-2 border-gray-200 shadow-sm hover:shadow">
                         Change Room
                     </button>
                 </div>
@@ -293,7 +199,7 @@
         <main class="flex-1 w-full max-w-6xl mx-auto p-3 sm:p-6 flex flex-col gap-4 sm:gap-6 relative z-10">
             
             <!-- Giant Toilet Status Widget -->
-            <div id="toilet-widget" class="status-widget w-full rounded-2xl sm:rounded-3xl border-4 shadow-lg p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-white text-center sm:text-left min-h-[140px] sm:min-h-[160px] bg-gray-200 border-gray-300 relative z-20">
+            <div id="toilet-widget" class="status-widget w-full rounded-2xl sm:rounded-3xl border-4 shadow-lg p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-white text-center sm:text-left min-h-[140px] sm:min-h-[160px] bg-gray-200 border-gray-300 pointer-events-none relative z-20">
                 <div class="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white shadow-inner border-4 border-white/20 flex items-center justify-center drop-shadow-md">
                     <div class="flex gap-1">
                         <svg class="w-6 h-10 sm:w-8 sm:h-12 text-blue-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C10.34 2 9 3.34 9 5C9 6.66 10.34 8 12 8C13.66 8 15 6.66 15 5C15 3.34 13.66 2 12 2ZM11 19.5V22H13V19.5H15V10C15 8.9 14.1 8 13 8H11C9.9 8 9 8.9 9 10V19.5H11Z"/></svg>
@@ -308,31 +214,18 @@
                         <p id="widget-sub-text" class="text-sm sm:text-lg lg:text-xl font-bold opacity-90 mt-0.5 sm:mt-1 drop-shadow-sm">Please select your room first.</p>
                     </div>
                     
-                    <div id="timer-container" class="hidden flex-col items-center justify-center bg-black/20 border border-white/20 rounded-xl sm:rounded-2xl px-4 sm:px-5 py-2 shadow-inner w-full sm:w-auto">
+                    <div id="timer-container" class="hidden flex-col items-center justify-center bg-black/15 border border-white/20 rounded-xl sm:rounded-2xl px-4 sm:px-5 py-2 shadow-inner w-full sm:w-auto">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest opacity-80 mb-0.5">Time Elapsed</span>
                         <span id="timer-display" class="text-2xl sm:text-3xl font-mono font-black drop-shadow-md tracking-wider">00:00</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Emergency Force Vacate Banner (Visible if another room is occupied) -->
-            <div id="force-vacate-container" class="hidden justify-end">
-                <button id="btn-force-vacate" class="text-xs font-bold text-gray-500 hover:text-red-600 flex items-center gap-1.5 transition-colors bg-white/70 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 shadow-sm cursor-pointer">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    Candidate already returned? Force Vacate
-                </button>
-            </div>
-
             <!-- Dashboard Rooms Grid (Dynamically Populated) -->
             <div id="dynamic-rooms-container" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 block-card flex-1">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
-                    <h3 class="text-xs sm:text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <div class="w-2.5 h-2.5 rounded-full bg-orange-500"></div> Assigned Cluster Rooms
-                    </h3>
-                    <span id="rooms-instruction" class="text-[11px] sm:text-xs font-bold text-blue-600">
-                        Tap your room to start
-                    </span>
-                </div>
+                <h3 class="text-xs sm:text-sm font-black text-gray-400 uppercase tracking-widest mb-4 sm:mb-6 flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-orange-500"></div> Assigned Cluster Rooms
+                </h3>
                 <div id="dynamic-rooms" class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                     <!-- Room buttons injected here based on chosen cluster -->
                 </div>
@@ -342,12 +235,12 @@
 
         <div class="text-center pb-4 sm:pb-6 z-10 relative flex flex-col items-center gap-2 sm:gap-3 mt-auto pt-2">
             <!-- Admin Access Footer Button -->
-            <button id="btn-admin-access" class="text-[10px] sm:text-xs font-bold text-gray-500 hover:text-gray-800 uppercase tracking-wider flex items-center gap-1.5 transition-colors bg-white/70 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer shadow-sm">
+            <button id="btn-admin-access" class="text-[10px] sm:text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wider flex items-center gap-1.5 transition-colors bg-white/50 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Admin / Switch Cluster
+                Admin Access
             </button>
             <div class="text-[10px] sm:text-xs text-gray-400 font-medium opacity-80">
                 All rights reserved. Evergreen Primary School 2026
@@ -355,7 +248,7 @@
         </div>
     </div>
 
-    <!-- Firebase Modular Script -->
+    <!-- Firebase Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -378,13 +271,14 @@
 
         const ADMIN_PASSCODE = "1756";
         let isInitialLoginFlow = true;
-        let hasUserInteracted = false;
-        let isFirebasePermissionError = false;
 
-        // Register user interaction to enable Web Audio chimes
-        window.addEventListener('pointerdown', () => { hasUserInteracted = true; }, { once: true });
+        // Kiosk Mode: Prevent accidental closure / refresh
+        window.addEventListener('beforeunload', function (e) {
+            e.preventDefault();
+            e.returnValue = 'Are you sure you want to close the Exam Toilet Monitor?';
+        });
 
-        // Expanded Default Clusters based on Evergreen Primary School layout
+        // Expanded Default Clusters based on all provided images & updates
         const defaultClusters = [
             { id: "L1_JH", level: "1", block: "Joy & Hope", rooms: ["SBB 1", "SBB 2", "SBB 3"], toilet: "Toilet beside lift" },
             { id: "L2_LP_A", level: "2", block: "Love & Peace", rooms: ["3 Care", "3 Charity", "3 Faith"], toilet: "Toilet beside Comp Lab 2" },
@@ -395,18 +289,18 @@
             { id: "L4_LP_A", level: "4", block: "Love & Peace", rooms: ["Life Sci 1", "Life Sci 2", "5 Grace"], toilet: "Toilet beside lift" },
             { id: "L4_LP_B", level: "4", block: "Love & Peace", rooms: ["5 Hope", "5 Faith", "Art Rm 1"], toilet: "Toilet beside lift" },
             
-            // ISH Cluster
+            // ISH Cluster (Updated)
             { id: "ISH_Block", level: "-", block: "ISH", rooms: ["Grp 4", "Grp 5", "Grp 6"], toilet: "Toilet inside ISH" },
             
-            // Care Block Clusters
+            // Care Block Clusters (Grouped by Level & Updated)
             { id: "L3_Care", level: "3", block: "Care", rooms: ["LSM 2", "LSM 1", "SBB 5", "SBB 4", "Grp 1", "Grp 2", "Grp 3"], toilet: "Toilet beside lift" },
             { id: "L4_Care", level: "4", block: "Care", rooms: ["SBB 7", "SBB 6", "5 JO"], toilet: "Toilet beside lift" },
             { id: "L5_Care", level: "5", block: "Care", rooms: ["Observation Rm", "SBB 8", "Teaching Lab"], toilet: "Toilet beside lift" },
             { id: "L6_Care", level: "6", block: "Care", rooms: ["PAL 2", "PAL 1"], toilet: "Toilet beside lift" }
         ];
 
-        // Load clusters
-        let clusters = JSON.parse(localStorage.getItem('custom_clusters_v5')) || defaultClusters;
+        // Load custom clusters if they exist, otherwise fallback to defaults. 
+        let clusters = JSON.parse(localStorage.getItem('custom_clusters_v4')) || defaultClusters;
 
         let dbPath = null;
         let selectedCluster = null;
@@ -420,7 +314,6 @@
             occupiedSince: null
         };
 
-        // DOM Elements
         const loginModal = document.getElementById('login-modal');
         const passcodeInput = document.getElementById('passcode-input');
         const btnSubmitLogin = document.getElementById('btn-submit-login');
@@ -438,7 +331,6 @@
         const appView = document.getElementById('app-view');
         const clusterGrid = document.getElementById('cluster-grid');
         const dynamicRoomsContainer = document.getElementById('dynamic-rooms');
-        const roomsInstruction = document.getElementById('rooms-instruction');
         
         const statusBanner = document.getElementById('status-banner');
         const bannerTitle = document.getElementById('banner-title');
@@ -449,77 +341,14 @@
         const widgetSubText = document.getElementById('widget-sub-text');
         const timerContainer = document.getElementById('timer-container');
         const timerDisplay = document.getElementById('timer-display');
-        const forceVacateContainer = document.getElementById('force-vacate-container');
-        const btnForceVacate = document.getElementById('btn-force-vacate');
 
-        // Sync Status Indicators
-        const appSyncPill = document.getElementById('app-sync-pill');
-        const appSyncDot = document.getElementById('app-sync-dot');
-        const appSyncText = document.getElementById('app-sync-text');
-        const setupSyncPill = document.getElementById('setup-sync-pill');
-        const setupSyncDot = document.getElementById('setup-sync-dot');
-        const setupSyncText = document.getElementById('setup-sync-text');
-
-        // Permission Alert & Rules Modal
-        const firebasePermissionAlert = document.getElementById('firebase-permission-alert');
-        const btnShowRulesModal = document.getElementById('btn-show-rules-modal');
-        const rulesModal = document.getElementById('rules-modal');
-        const btnCloseRulesModal = document.getElementById('btn-close-rules-modal');
-        const btnDismissRulesModal = document.getElementById('btn-dismiss-rules-modal');
-        const btnCopyRules = document.getElementById('btn-copy-rules');
-        const btnTestSync = document.getElementById('btn-test-sync');
-
-        // ==========================================
-        // AUDIO & VIBRATION NOTIFICATIONS
-        // ==========================================
-        function playChime(type) {
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                const ctx = new AudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                const now = ctx.currentTime;
-                if (type === 'occupied') {
-                    // Attention tone
-                    osc.frequency.setValueAtTime(440, now);
-                    osc.frequency.setValueAtTime(330, now + 0.15);
-                    gain.gain.setValueAtTime(0.12, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-                    osc.start(now);
-                    osc.stop(now + 0.4);
-                } else {
-                    // Available chime
-                    osc.frequency.setValueAtTime(523.25, now);
-                    osc.frequency.setValueAtTime(659.25, now + 0.12);
-                    gain.gain.setValueAtTime(0.12, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                    osc.start(now);
-                    osc.stop(now + 0.35);
-                }
-            } catch (e) {
-                // Audio not allowed yet
-            }
-
-            // Haptic vibration on mobile
-            if (navigator.vibrate) {
-                try { navigator.vibrate(type === 'occupied' ? [120, 60, 120] : [150]); } catch(e){}
-            }
-        }
-
-        // ==========================================
-        // TOAST NOTIFICATIONS
-        // ==========================================
         function showToast(message, isError = true) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast flex items-center gap-2 sm:gap-3 ${isError ? 'bg-red-600' : 'bg-gray-900'} text-xs sm:text-sm`;
+            toast.className = `toast flex items-center gap-2 sm:gap-3 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-xs sm:text-sm`;
             const iconSVG = isError ? 
-                `<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>` : 
-                `<svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                `<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>` : 
+                `<svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
                 
             toast.innerHTML = `${iconSVG} <span>${message}</span>`;
             container.appendChild(toast);
@@ -527,121 +356,16 @@
             setTimeout(() => toast.classList.add('show'), 10);
             setTimeout(() => {
                 toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 350);
-            }, 3500);
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
-
-        // ==========================================
-        // CONNECTION & SYNC STATUS MONITORING
-        // ==========================================
-        function setSyncStatus(status, text) {
-            if (status === 'connected') {
-                // Live Connected (Green)
-                appSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors bg-emerald-50 border-emerald-200 text-emerald-700";
-                appSyncDot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                appSyncText.textContent = text || "Live";
-
-                setupSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-100 backdrop-blur-sm border border-emerald-400/30";
-                setupSyncDot.className = "w-2 h-2 rounded-full bg-emerald-400";
-                setupSyncText.textContent = "Live Server Online";
-            } else if (status === 'connecting') {
-                // Connecting (Yellow)
-                appSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors bg-amber-50 border-amber-200 text-amber-700";
-                appSyncDot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
-                appSyncText.textContent = text || "Connecting...";
-
-                setupSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm border border-white/20";
-                setupSyncDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
-                setupSyncText.textContent = "Connecting to Live Server...";
-            } else {
-                // Offline / Error (Red)
-                appSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors bg-red-50 border-red-200 text-red-700 cursor-pointer";
-                appSyncDot.className = "w-2 h-2 rounded-full bg-red-500";
-                appSyncText.textContent = text || "Sync Offline";
-
-                setupSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-100 backdrop-blur-sm border border-red-400/30";
-                setupSyncDot.className = "w-2 h-2 rounded-full bg-red-400";
-                setupSyncText.textContent = text || "Sync Blocked";
-            }
-        }
-
-        // Listen to Firebase Realtime Database connection status
-        const connectedRef = ref(db, ".info/connected");
-        onValue(connectedRef, (snap) => {
-            if (snap.val() === true && !isFirebasePermissionError) {
-                setSyncStatus('connected', 'Live Synced');
-            } else if (!isFirebasePermissionError) {
-                setSyncStatus('connecting', 'Connecting...');
-            }
-        });
-
-        function handlePermissionError() {
-            isFirebasePermissionError = true;
-            firebasePermissionAlert.classList.remove('hidden');
-            setSyncStatus('error', 'Permission Denied');
-        }
-
-        function clearPermissionError() {
-            isFirebasePermissionError = false;
-            firebasePermissionAlert.classList.add('hidden');
-            setSyncStatus('connected', 'Live Synced');
-        }
-
-        // Rules modal triggers
-        btnShowRulesModal.addEventListener('click', () => rulesModal.classList.remove('hidden'));
-        btnCloseRulesModal.addEventListener('click', () => rulesModal.classList.add('hidden'));
-        btnDismissRulesModal.addEventListener('click', () => rulesModal.classList.add('hidden'));
-        appSyncPill.addEventListener('click', () => {
-            if (isFirebasePermissionError) rulesModal.classList.remove('hidden');
-        });
-
-        btnCopyRules.addEventListener('click', () => {
-            const code = document.getElementById('rules-code-block').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                btnCopyRules.textContent = "Copied!";
-                setTimeout(() => { btnCopyRules.textContent = "Copy JSON"; }, 2000);
-            });
-        });
-
-        btnTestSync.addEventListener('click', async () => {
-            btnTestSync.disabled = true;
-            btnTestSync.innerHTML = "Testing connection...";
-            try {
-                const testRef = ref(db, 'exam_map_state/_ping');
-                await set(testRef, { timestamp: Date.now() });
-                clearPermissionError();
-                showToast("Connection successful! Live sync is active.", false);
-                rulesModal.classList.add('hidden');
-            } catch (err) {
-                console.error("Test sync error:", err);
-                handlePermissionError();
-                showToast("Still blocked: " + err.message, true);
-            } finally {
-                btnTestSync.disabled = false;
-                btnTestSync.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Test Live Connection Now`;
-            }
-        });
 
         // ==========================================
         // LOGIN & FULLSCREEN LOGIC
         // ==========================================
+
         function checkAuthOnLoad() {
-            // Check if user already has an active session on this device
-            const savedClusterId = localStorage.getItem('activeClusterId_v5');
-            const savedRoom = localStorage.getItem('activeRoomName_v5');
-            
-            if (savedClusterId) {
-                const cluster = clusters.find(c => c.id === savedClusterId);
-                if (cluster) {
-                    loadClusterIntoApp(cluster);
-                    if (savedRoom && cluster.rooms.includes(savedRoom)) {
-                        myRoomName = savedRoom;
-                        updateUI();
-                    }
-                    return;
-                }
-            }
-            // If no active session, show cluster selection
+            // ALWAYS launch to the admin login page
             promptLogin(true); 
         }
 
@@ -666,8 +390,8 @@
                 if (isInitialLoginFlow) {
                     setupView.classList.remove('hidden');
                 } else {
-                    localStorage.removeItem('activeClusterId_v5'); 
-                    localStorage.removeItem('activeRoomName_v5');
+                    exitFullscreen();
+                    localStorage.removeItem('activeClusterId'); 
                     appView.classList.add('hidden');
                     setupView.classList.remove('hidden');
                 }
@@ -693,16 +417,32 @@
         btnResetDefaults.addEventListener('click', () => {
             if(confirm("Are you sure you want to reset all custom room names back to default?")) {
                 clusters = JSON.parse(JSON.stringify(defaultClusters));
-                localStorage.setItem('custom_clusters_v5', JSON.stringify(clusters));
+                localStorage.setItem('custom_clusters_v4', JSON.stringify(clusters));
                 clusterGrid.innerHTML = '';
                 initSetupGrid();
                 showToast("Rooms reset to defaults.", false);
             }
         });
 
+        function enterFullscreen() {
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) docEl.requestFullscreen().catch(()=>{});
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen().catch(()=>{});
+            else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen().catch(()=>{});
+        }
+
+        function exitFullscreen() {
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
+            }
+        }
+
         // ==========================================
         // EDIT ROOMS LOGIC
         // ==========================================
+
         function openEditModal(clusterId) {
             editingClusterId = clusterId;
             const cluster = clusters.find(c => c.id === clusterId);
@@ -717,7 +457,7 @@
                 const inputGroup = document.createElement('div');
                 inputGroup.innerHTML = `
                     <label class="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase mb-1 tracking-wider">Room ${index + 1}</label>
-                    <input type="text" class="w-full py-2 px-3 text-base font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all room-edit-input" value="${roomName}" data-index="${index}">
+                    <input type="text" class="w-full py-2.5 px-3 sm:py-3 sm:px-4 text-base sm:text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all room-edit-input" value="${roomName}" data-index="${index}">
                 `;
                 editRoomInputsContainer.appendChild(inputGroup);
             });
@@ -730,7 +470,7 @@
             editingClusterId = null;
         });
 
-        btnSaveEdit.addEventListener('click', async () => {
+        btnSaveEdit.addEventListener('click', () => {
             if (!editingClusterId) return;
             
             const cluster = clusters.find(c => c.id === editingClusterId);
@@ -742,15 +482,10 @@
                 cluster.rooms[idx] = newName || `Room ${idx + 1}`;
             });
             
-            localStorage.setItem('custom_clusters_v5', JSON.stringify(clusters));
+            // Save modified clusters to memory
+            localStorage.setItem('custom_clusters_v4', JSON.stringify(clusters));
             
-            // Sync to Firebase so other devices receive updated room names
-            try {
-                await set(ref(db, `exam_map_config/clusters/${cluster.id}`), cluster.rooms);
-            } catch(e) {
-                // Fallback to local storage if Firebase rules block config
-            }
-            
+            // Refresh Setup Grid Display
             clusterGrid.innerHTML = '';
             initSetupGrid();
             
@@ -759,10 +494,10 @@
         });
 
         // ==========================================
-        // SETUP GRID & CLUSTER SELECTION
+        // UI & STATE LOGIC
         // ==========================================
+
         function initSetupGrid() {
-            clusterGrid.innerHTML = '';
             clusters.forEach((c) => {
                 const card = document.createElement('div');
                 card.className = 'relative text-left p-4 sm:p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col h-full shadow-sm hover:shadow-md cursor-pointer group';
@@ -771,12 +506,15 @@
                 
                 card.innerHTML = `
                     <div class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase mb-1.5 sm:mb-2 tracking-wider">${levelDisplay}</div>
-                    <div class="text-lg sm:text-xl font-black text-gray-800 mb-2 sm:mb-3 leading-tight">${c.toilet}</div>
-                    <div class="mt-auto flex flex-wrap gap-1 sm:gap-1.5">
-                        ${c.rooms.map(r => `<span class="bg-blue-100 text-blue-700 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-blue-200">${r}</span>`).join('')}
+                    <div class="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight">${c.toilet}</div>
+                    <div class="mt-auto">
+                        <div class="flex flex-wrap gap-1 sm:gap-1.5">
+                            ${c.rooms.map(r => `<span class="bg-blue-100 text-blue-700 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-blue-200">${r}</span>`).join('')}
+                        </div>
                     </div>
                     
-                    <button class="edit-btn absolute top-2 right-2 sm:top-3 sm:right-3 text-gray-400 hover:text-blue-600 bg-white hover:bg-blue-50 rounded-full p-1.5 sm:p-2 transition-colors shadow-sm sm:opacity-0 sm:group-hover:opacity-100 border border-gray-200 cursor-pointer" title="Edit Rooms">
+                    <!-- Edit Button (Shows on Hover/Focus) -->
+                    <button class="edit-btn absolute top-2 right-2 sm:top-3 sm:right-3 text-gray-400 hover:text-blue-600 bg-white hover:bg-blue-50 rounded-full p-1.5 sm:p-2 transition-colors shadow-sm sm:opacity-0 sm:group-hover:opacity-100 border border-gray-200" title="Edit Rooms">
                         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
@@ -787,7 +525,8 @@
                     if(e.target.closest('.edit-btn')) {
                         openEditModal(c.id);
                     } else {
-                        localStorage.setItem('activeClusterId_v5', c.id);
+                        localStorage.setItem('activeClusterId', c.id);
+                        enterFullscreen(); 
                         loadClusterIntoApp(c);
                     }
                 };
@@ -796,26 +535,21 @@
             });
         }
 
-        // ==========================================
-        // REALTIME SYNC & APP LOGIC
-        // ==========================================
         function loadClusterIntoApp(cluster) {
             selectedCluster = cluster;
             dbPath = `exam_map_state/cluster_${cluster.id}`;
-            myRoomName = localStorage.getItem('activeRoomName_v5') || null; 
+            myRoomName = null; 
             
-            // Disconnect any existing listener to prevent duplicate events
+            // Disconnect any existing listener to prevent cross-contamination
             if (unsubscribeFirebase) {
                 unsubscribeFirebase();
-                unsubscribeFirebase = null;
             }
             
-            // Clear local state instantly
+            // Clear local state instantly to avoid ghosting
             state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
             
             document.getElementById('display-toilet-name').textContent = cluster.toilet;
             
-            // Build dynamic room buttons
             dynamicRoomsContainer.innerHTML = '';
             cluster.rooms.forEach(roomName => {
                 const rBtn = document.createElement('button');
@@ -825,83 +559,50 @@
                 
                 rBtn.addEventListener('click', () => {
                     if (rBtn.disabled) return;
-                    myRoomName = roomName;
-                    localStorage.setItem('activeRoomName_v5', myRoomName);
-                    showToast(`Room set to ${myRoomName}`, false);
-                    updateUI();
+                    if (!myRoomName) {
+                        myRoomName = roomName;
+                        showToast(`Room set to ${myRoomName}`, false);
+                        updateUI();
+                    }
                 });
                 dynamicRoomsContainer.appendChild(rBtn);
             });
 
-            // Listen to Live Firebase Database Path
             const toiletRef = ref(db, dbPath);
+            
+            // Listen to Firebase. DO NOT blindly set() if data is null, 
+            // as this causes race conditions that overwrite other users' live data.
             unsubscribeFirebase = onValue(toiletRef, (snapshot) => {
-                clearPermissionError();
                 const data = snapshot.val();
-                const prevOccupied = state.isOccupied;
-
-                if (data && typeof data === 'object') {
-                    state = {
-                        isOccupied: Boolean(data.isOccupied),
-                        occupiedBy: data.occupiedBy || null,
-                        occupiedSince: data.occupiedSince || null
-                    };
+                if (data) {
+                    state = { ...state, ...data };
                 } else {
                     state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
                 }
-
-                // If remote state changed, play audio alert
-                if (prevOccupied !== state.isOccupied && hasUserInteracted) {
-                    playChime(state.isOccupied ? 'occupied' : 'vacant');
-                }
-
                 updateUI();
-            }, (error) => {
-                console.error("Firebase onValue error:", error);
-                if (error.message && error.message.toLowerCase().includes("permission_denied") || error.code === "PERMISSION_DENIED") {
-                    handlePermissionError();
-                } else {
-                    showToast("Sync Error: " + error.message, true);
-                }
             });
 
             setupView.classList.add('hidden');
             appView.classList.remove('hidden');
-            updateUI();
         }
 
-        async function updateState(newState) {
-            if (!dbPath) return;
-
-            const previousState = { ...state };
-            const nextState = { ...state, ...newState };
-            
-            // Optimistically update local UI immediately
-            state = nextState;
+        function updateState(newState) {
+            // Optimistically update local state immediately
+            state = { ...state, ...newState };
             updateUI();
             
-            // Broadcast to Firebase Realtime Database
-            try {
-                await set(ref(db, dbPath), nextState);
-                clearPermissionError();
-            } catch (err) {
-                console.error("Firebase updateState error:", err);
-                // Roll back state to prevent misleading the invigilator
-                state = previousState;
-                updateUI();
-
-                if (err.message && err.message.toLowerCase().includes("permission_denied") || err.code === "PERMISSION_DENIED") {
-                    handlePermissionError();
-                    showToast("Sync Failed: Firebase Permission Denied!", true);
-                } else {
-                    showToast("Failed to sync across devices. Check internet connection.", true);
-                }
+            // Push to Firebase
+            if (dbPath) {
+                set(ref(db, dbPath), state).catch(err => {
+                    showToast("Network error syncing data.", true);
+                    console.error(err);
+                });
             }
         }
 
         function updateTimerDisplay() {
             if (!state.isOccupied || !state.occupiedSince) return;
-            const diffSecs = Math.max(0, Math.floor((Date.now() - state.occupiedSince) / 1000));
+            const diffSecs = Math.floor((Date.now() - state.occupiedSince) / 1000);
             const mins = Math.floor(diffSecs / 60).toString().padStart(2, '0');
             const secs = (diffSecs % 60).toString().padStart(2, '0');
             timerDisplay.textContent = `${mins}:${secs}`;
@@ -926,7 +627,6 @@
         }
 
         function updateUI() {
-            // Update individual room buttons
             const roomButtons = document.querySelectorAll('.room-btn');
             roomButtons.forEach(r => {
                 r.classList.remove('my-room', 'other-room');
@@ -940,132 +640,99 @@
                 }
             });
 
-            // Reset status widget classes
-            toiletWidget.classList.remove('status-vacant', 'status-me', 'status-other', 'disabled', 'bg-gray-200', 'border-gray-300');
+            toiletWidget.classList.remove('status-vacant', 'status-me', 'status-other', 'disabled', 'bg-gray-200', 'border-gray-300', 'pointer-events-none');
             
-            // State 1: No room selected yet
             if (!myRoomName) {
                 statusBanner.className = "glass-panel shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-white/90 backdrop-blur-md";
                 bannerTitle.textContent = "Select Exam Room";
-                bannerTitle.className = "text-xl sm:text-2xl font-black tracking-tight text-gray-900";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900";
                 bannerSubtitle.textContent = "Tap your assigned room on the dashboard below to begin.";
                 bannerSubtitle.className = "text-sm sm:text-base font-semibold text-gray-500 mt-0.5";
                 
                 btnReset.classList.add('hidden');
                 document.getElementById('current-room-container').classList.add('hidden');
                 document.getElementById('current-room-container').classList.remove('flex');
-                forceVacateContainer.classList.add('hidden');
-                forceVacateContainer.classList.remove('flex');
                 
-                toiletWidget.classList.add('bg-gray-200', 'border-gray-300');
+                toiletWidget.classList.add('bg-gray-200', 'border-gray-300', 'pointer-events-none');
+                toiletWidget.style.pointerEvents = 'none'; 
                 widgetStatusText.textContent = "AWAITING SELECTION";
                 widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-gray-500 uppercase";
                 widgetSubText.textContent = "Please select your room from the grid below.";
                 widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold text-gray-400 mt-0.5 sm:mt-1";
-                roomsInstruction.textContent = "👉 Tap your room to begin";
-                roomsInstruction.className = "text-[11px] sm:text-xs font-bold text-blue-600 animate-pulse";
-                manageTimer();
                 return; 
             }
 
-            // Room is selected
             btnReset.classList.remove('hidden');
             document.getElementById('current-room-container').classList.remove('hidden');
             document.getElementById('current-room-container').classList.add('flex');
             document.getElementById('current-room-text').textContent = myRoomName;
-            roomsInstruction.textContent = `Assigned: ${myRoomName}`;
-            roomsInstruction.className = "text-[11px] sm:text-xs font-bold text-gray-500";
+            toiletWidget.style.pointerEvents = 'auto'; 
 
-            // State 2: Toilet is VACANT (Available)
             if (!state.isOccupied) {
-                statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-emerald-50/90 backdrop-blur-md border-emerald-200";
+                statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-white/90 backdrop-blur-md border-gray-200";
                 bannerTitle.textContent = "Available";
-                bannerTitle.className = "text-xl sm:text-2xl font-black tracking-tight text-emerald-700";
-                bannerSubtitle.textContent = "Toilet is free. Tap the green widget to send candidate.";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-emerald-600";
+                bannerSubtitle.textContent = "";
                 bannerSubtitle.className = "text-sm sm:text-base font-bold text-emerald-600 mt-0.5";
                 
                 toiletWidget.classList.add('status-vacant');
                 widgetStatusText.textContent = "TAP TO SEND";
                 widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
                 widgetSubText.textContent = "You may send a candidate.";
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-95 mt-0.5 sm:mt-1 drop-shadow-sm text-white";
-                
-                forceVacateContainer.classList.add('hidden');
-                forceVacateContainer.classList.remove('flex');
+                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-90 mt-0.5 sm:mt-1 drop-shadow-sm text-white";
             } 
-            // State 3: Toilet is OCCUPIED by MY room
             else if (state.isOccupied && state.occupiedBy === myRoomName) {
                 statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-blue-50/90 backdrop-blur-md border-blue-200";
-                bannerTitle.textContent = "Occupied (Your Candidate)";
-                bannerTitle.className = "text-xl sm:text-2xl font-black tracking-tight text-blue-900";
-                bannerSubtitle.textContent = "Your candidate is currently at the toilet. Tap when returned.";
+                bannerTitle.textContent = "Occupied";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-blue-900";
+                bannerSubtitle.textContent = "";
                 bannerSubtitle.className = "text-sm sm:text-base font-bold text-blue-600 mt-0.5";
                 
                 toiletWidget.classList.add('status-me');
                 widgetStatusText.textContent = "TAP ON RETURN";
                 widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
-                widgetSubText.textContent = "Tap here as soon as candidate returns to room.";
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-95 mt-0.5 sm:mt-1 drop-shadow-sm text-blue-100";
-                
-                forceVacateContainer.classList.add('hidden');
-                forceVacateContainer.classList.remove('flex');
+                widgetSubText.textContent = "Your candidate is currently at the toilet.";
+                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-90 mt-0.5 sm:mt-1 drop-shadow-sm text-blue-100";
             } 
-            // State 4: Toilet is OCCUPIED by ANOTHER room
             else if (state.isOccupied && state.occupiedBy !== myRoomName) {
                 statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-red-50/90 backdrop-blur-md border-red-200";
-                bannerTitle.textContent = `Occupied by ${state.occupiedBy}`;
-                bannerTitle.className = "text-xl sm:text-2xl font-black tracking-tight text-red-900";
+                bannerTitle.textContent = "Occupied";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-red-900";
+                bannerSubtitle.textContent = "";
+                bannerSubtitle.className = "text-sm sm:text-base font-bold text-red-600 mt-0.5";
                 
-                toiletWidget.classList.add('status-other');
+                // Disable the widget so other users cannot click it
+                toiletWidget.classList.add('status-other', 'disabled');
+                toiletWidget.style.pointerEvents = 'none'; 
+                
                 widgetStatusText.textContent = "IN USE";
                 widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
-                widgetSubText.textContent = `Do not send candidate.`;
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-100 mt-0.5 sm:mt-1 drop-shadow-md text-red-100 bg-red-950/40 px-3 py-1 rounded-xl inline-block";
-                
-                forceVacateContainer.classList.remove('hidden');
-                forceVacateContainer.classList.add('flex');
+                widgetSubText.textContent = "Do not send candidate.";
+                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-100 mt-0.5 sm:mt-1 drop-shadow-md text-red-100 bg-red-900/30 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg inline-block";
             }
 
             manageTimer();
         }
 
-        // Toilet Widget Click Handler
         toiletWidget.addEventListener('click', () => {
             if (!myRoomName) {
-                showToast("Please tap your Exam Room on the dashboard first.", true);
+                showToast("Please tap your Exam Room on the dashboard first.");
                 return;
             }
 
             if (!state.isOccupied) {
-                // Send candidate
                 updateState({ isOccupied: true, occupiedBy: myRoomName, occupiedSince: Date.now() });
-                showToast("Candidate sent! Live status updated across all devices.", false);
+                showToast("Candidate sent.", false);
             } else if (state.isOccupied && state.occupiedBy === myRoomName) {
-                // Candidate returned
                 updateState({ isOccupied: false, occupiedBy: null, occupiedSince: null });
-                showToast("Candidate returned. Toilet is now marked Available.", false);
-            } else {
-                // Occupied by another room
-                showToast(`Cannot send! Toilet is currently occupied by ${state.occupiedBy}. Please wait.`, true);
+                showToast("Candidate returned. You may send a candidate.", false);
             }
+            // The else block is no longer accessible because pointerEvents is set to 'none' for other users
         });
 
-        // Emergency Force Vacate Button
-        btnForceVacate.addEventListener('click', () => {
-            if (!state.isOccupied) return;
-            const confirmVacate = confirm(`Has the candidate from ${state.occupiedBy} already returned to their room?\n\nOnly force-vacate if the toilet is verified vacant and the invigilator forgot to tap return.`);
-            if (confirmVacate) {
-                updateState({ isOccupied: false, occupiedBy: null, occupiedSince: null });
-                showToast("Toilet has been marked vacant.", false);
-            }
-        });
-
-        // Change Room Button
         btnReset.addEventListener('click', () => {
             myRoomName = null;
-            localStorage.removeItem('activeRoomName_v5');
             updateUI();
-            showToast("Room unselected. Tap your room to begin.", false);
         });
 
         // Run Initial Setup

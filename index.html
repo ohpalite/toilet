@@ -539,7 +539,7 @@
                 // Live Connected (Green)
                 appSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors bg-emerald-50 border-emerald-200 text-emerald-700";
                 appSyncDot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                appSyncText.textContent = text || "Live Synced";
+                appSyncText.textContent = text || "Live";
 
                 setupSyncPill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-100 backdrop-blur-sm border border-emerald-400/30";
                 setupSyncDot.className = "w-2 h-2 rounded-full bg-emerald-400";
@@ -1015,13 +1015,11 @@
                 statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-red-50/90 backdrop-blur-md border-red-200";
                 bannerTitle.textContent = `Occupied by ${state.occupiedBy}`;
                 bannerTitle.className = "text-xl sm:text-2xl font-black tracking-tight text-red-900";
-                bannerSubtitle.textContent = `A candidate from ${state.occupiedBy} is currently in the toilet.`;
-                bannerSubtitle.className = "text-sm sm:text-base font-bold text-red-600 mt-0.5";
                 
                 toiletWidget.classList.add('status-other');
                 widgetStatusText.textContent = "IN USE";
                 widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
-                widgetSubText.textContent = `Do not send candidate. In use by ${state.occupiedBy}.`;
+                widgetSubText.textContent = `Do not send candidate.`;
                 widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-100 mt-0.5 sm:mt-1 drop-shadow-md text-red-100 bg-red-950/40 px-3 py-1 rounded-xl inline-block";
                 
                 forceVacateContainer.classList.remove('hidden');

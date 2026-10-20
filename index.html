@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Exam Toilet Monitor - Map View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -297,13 +300,13 @@
         ];
 
         // Load custom clusters if they exist, otherwise fallback to defaults. 
-        let clusters = JSON.parse(localStorage.getItem('custom_clusters_v3')) || defaultClusters;
+        let clusters = JSON.parse(localStorage.getItem('custom_clusters_v4')) || defaultClusters;
 
         let dbPath = null;
         let selectedCluster = null;
         let myRoomName = null;
         let timerInterval = null;
-        let unsubscribeFirebase = null; // Added to fix zombie listeners
+        let unsubscribeFirebase = null;
         
         let state = {
             isOccupied: false,
@@ -414,7 +417,7 @@
         btnResetDefaults.addEventListener('click', () => {
             if(confirm("Are you sure you want to reset all custom room names back to default?")) {
                 clusters = JSON.parse(JSON.stringify(defaultClusters));
-                localStorage.setItem('custom_clusters_v3', JSON.stringify(clusters));
+                localStorage.setItem('custom_clusters_v4', JSON.stringify(clusters));
                 clusterGrid.innerHTML = '';
                 initSetupGrid();
                 showToast("Rooms reset to defaults.", false);
@@ -480,7 +483,7 @@
             });
             
             // Save modified clusters to memory
-            localStorage.setItem('custom_clusters_v3', JSON.stringify(clusters));
+            localStorage.setItem('custom_clusters_v4', JSON.stringify(clusters));
             
             // Refresh Setup Grid Display
             clusterGrid.innerHTML = '';
@@ -543,7 +546,7 @@
                 unsubscribeFirebase();
             }
             
-            // Clear local state instantly
+            // Clear local state instantly to avoid ghosting
             state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
             
             document.getElementById('display-toilet-name').textContent = cluster.toilet;
@@ -567,13 +570,15 @@
             });
 
             const toiletRef = ref(db, dbPath);
+            
+            // Listen to Firebase. DO NOT blindly set() if data is null, 
+            // as this causes race conditions that overwrite other users' live data.
             unsubscribeFirebase = onValue(toiletRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    state = data;
+                    state = { ...state, ...data };
                 } else {
                     state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
-                    set(toiletRef, state);
                 }
                 updateUI();
             });
@@ -583,9 +588,17 @@
         }
 
         function updateState(newState) {
+            // Optimistically update local state immediately
             state = { ...state, ...newState };
-            if (dbPath) set(ref(db, dbPath), state);
             updateUI();
+            
+            // Push to Firebase
+            if (dbPath) {
+                set(ref(db, dbPath), state).catch(err => {
+                    showToast("Network error syncing data.", true);
+                    console.error(err);
+                });
+            }
         }
 
         function updateTimerDisplay() {
@@ -689,7 +702,10 @@
                 bannerSubtitle.textContent = "";
                 bannerSubtitle.className = "text-sm sm:text-base font-bold text-red-600 mt-0.5";
                 
+                // Disable the widget so other users cannot click it
                 toiletWidget.classList.add('status-other', 'disabled');
+                toiletWidget.style.pointerEvents = 'none'; 
+                
                 widgetStatusText.textContent = "IN USE";
                 widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
                 widgetSubText.textContent = "Do not send candidate.";
@@ -711,9 +727,8 @@
             } else if (state.isOccupied && state.occupiedBy === myRoomName) {
                 updateState({ isOccupied: false, occupiedBy: null, occupiedSince: null });
                 showToast("Candidate returned. You may send a candidate.", false);
-            } else {
-                showToast(`Cannot send. Currently occupied by ${state.occupiedBy}.`);
             }
+            // The else block is no longer accessible because pointerEvents is set to 'none' for other users
         });
 
         btnReset.addEventListener('click', () => {

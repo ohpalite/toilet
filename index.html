@@ -137,6 +137,11 @@
             <div id="edit-room-inputs" class="flex flex-col gap-4 mb-6 max-h-[50vh] overflow-y-auto px-2">
                 <!-- Inputs injected here dynamically -->
             </div>
+            
+            <button id="btn-add-room" class="w-full py-2.5 mb-6 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                Add Room
+            </button>
                 
             <div class="flex gap-3">
                 <button id="btn-cancel-edit" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancel</button>
@@ -278,29 +283,32 @@
             e.returnValue = 'Are you sure you want to close the Exam Toilet Monitor?';
         });
 
-        // Expanded Default Clusters based on all provided images & updates
+        // Expanded Default Clusters with newly added Level 4 Care & Peace rooms
         const defaultClusters = [
             { id: "L1_JH", level: "1", block: "Joy & Hope", rooms: ["SBB 1", "SBB 2", "SBB 3"], toilet: "Toilet beside lift" },
             { id: "L2_LP_A", level: "2", block: "Love & Peace", rooms: ["3 Care", "3 Charity", "3 Faith"], toilet: "Toilet beside Comp Lab 2" },
             { id: "L2_LP_B", level: "2", block: "Love & Peace", rooms: ["3 Grace", "3 Hope", "3 Joy"], toilet: "Toilet beside lift" },
-            { id: "L3_JH_A", level: "3", block: "Joy & Hope", rooms: ["4 Care", "4 Charity", "4 Grace"], toilet: "Toilet beside lift" },
-            { id: "L3_JH_B", level: "3", block: "Joy & Hope", rooms: ["4 Faith", "4 Hope", "4 Love"], toilet: "Toilet beside lift" },
+            
+            // 1. Grouped 4 Care, 4 Charity, 4 Grace, 4 Faith, 4 Hope, 4 Love
+            { id: "L3_JH_All", level: "3", block: "Joy & Hope", rooms: ["4 Care", "4 Charity", "4 Grace", "4 Faith", "4 Hope", "4 Love"], toilet: "Toilet beside lift" },
+            
             { id: "L3_LP", level: "3", block: "Love & Peace", rooms: ["4 Joy", "5 Care", "5 Charity"], toilet: "Toilet beside Comp Lab 3" },
-            { id: "L4_LP_A", level: "4", block: "Love & Peace", rooms: ["Life Sci 1", "Life Sci 2", "5 Grace"], toilet: "Toilet beside lift" },
-            { id: "L4_LP_B", level: "4", block: "Love & Peace", rooms: ["5 Hope", "5 Faith", "Art Rm 1"], toilet: "Toilet beside lift" },
+            
+            // 2. Grouped Life Sci 1, Life Sci 2, 5 Grace, 5 Hope, 5 Faith, Art Rm 1, 6 Care, 6 Charity, 6 Faith, 6 Grace, 6 Hope, 6 Joy
+            { id: "L4_LP_All", level: "4", block: "Hope, Joy, Love & Peace", rooms: ["Life Sci 1", "Life Sci 2", "5 Grace", "5 Hope", "5 Faith", "Art Rm 1", "6 Care", "6 Charity", "6 Faith", "6 Grace", "6 Hope", "6 Joy"], toilet: "Toilet beside lift" },
             
             // ISH Cluster (Updated)
-            { id: "ISH_Block", level: "-", block: "ISH", rooms: ["Grp 4", "Grp 5", "Grp 6"], toilet: "Toilet inside ISH" },
+            { id: "ISH_Block", level: "-", block: "ISH", rooms: ["ISH Grp 4", "ISH Grp 5", "ISH Grp 6"], toilet: "Toilet inside ISH" },
             
             // Care Block Clusters (Grouped by Level & Updated)
-            { id: "L3_Care", level: "3", block: "Care", rooms: ["LSM 2", "LSM 1", "SBB 5", "SBB 4", "Grp 1", "Grp 2", "Grp 3"], toilet: "Toilet beside lift" },
+            { id: "L3_Care", level: "3", block: "Care", rooms: ["LSM 2", "LSM 1", "SBB 5", "SBB 4", "ISH Grp 1", "ISH Grp 2", "ISH Grp 3"], toilet: "Toilet beside lift" },
             { id: "L4_Care", level: "4", block: "Care", rooms: ["SBB 7", "SBB 6", "5 JO"], toilet: "Toilet beside lift" },
             { id: "L5_Care", level: "5", block: "Care", rooms: ["Observation Rm", "SBB 8", "Teaching Lab"], toilet: "Toilet beside lift" },
             { id: "L6_Care", level: "6", block: "Care", rooms: ["PAL 2", "PAL 1"], toilet: "Toilet beside lift" }
         ];
 
-        // Load custom clusters if they exist, otherwise fallback to defaults. 
-        let clusters = JSON.parse(localStorage.getItem('custom_clusters_v4')) || defaultClusters;
+        // Changed key to custom_clusters_v7 to force the newly updated L4 cluster defaults to load
+        let clusters = JSON.parse(localStorage.getItem('custom_clusters_v7')) || defaultClusters;
 
         let dbPath = null;
         let selectedCluster = null;
@@ -325,6 +333,7 @@
         const editRoomInputsContainer = document.getElementById('edit-room-inputs');
         const btnCancelEdit = document.getElementById('btn-cancel-edit');
         const btnSaveEdit = document.getElementById('btn-save-edit');
+        const btnAddRoom = document.getElementById('btn-add-room');
         let editingClusterId = null;
 
         const setupView = document.getElementById('setup-view');
@@ -360,12 +369,7 @@
             }, 3000);
         }
 
-        // ==========================================
-        // LOGIN & FULLSCREEN LOGIC
-        // ==========================================
-
         function checkAuthOnLoad() {
-            // ALWAYS launch to the admin login page
             promptLogin(true); 
         }
 
@@ -388,11 +392,13 @@
                 passcodeInput.value = '';
                 
                 if (isInitialLoginFlow) {
+                    initSetupGrid();
                     setupView.classList.remove('hidden');
                 } else {
                     exitFullscreen();
                     localStorage.removeItem('activeClusterId'); 
                     appView.classList.add('hidden');
+                    initSetupGrid();
                     setupView.classList.remove('hidden');
                 }
             } else {
@@ -413,15 +419,13 @@
             promptLogin(false);
         });
 
-        // Admin hard-reset for default names
         btnResetDefaults.addEventListener('click', () => {
-            if(confirm("Are you sure you want to reset all custom room names back to default?")) {
-                clusters = JSON.parse(JSON.stringify(defaultClusters));
-                localStorage.setItem('custom_clusters_v4', JSON.stringify(clusters));
-                clusterGrid.innerHTML = '';
-                initSetupGrid();
-                showToast("Rooms reset to defaults.", false);
-            }
+            // Remove confirm() and replace with direct reset + toast notification based on guardrails
+            clusters = JSON.parse(JSON.stringify(defaultClusters));
+            localStorage.setItem('custom_clusters_v7', JSON.stringify(clusters));
+            clusterGrid.innerHTML = '';
+            initSetupGrid();
+            showToast("Rooms reset to defaults.", false);
         });
 
         function enterFullscreen() {
@@ -439,9 +443,36 @@
             }
         }
 
-        // ==========================================
-        // EDIT ROOMS LOGIC
-        // ==========================================
+        
+        // Helper function to create individual room input lines
+        function createRoomInputGroup(roomName, index) {
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'flex items-end gap-2 group-item';
+            inputGroup.innerHTML = `
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase mb-1 tracking-wider">Room <span class="room-number">${index + 1}</span></label>
+                    <input type="text" class="w-full py-2.5 px-3 sm:py-3 sm:px-4 text-base sm:text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all room-edit-input" value="${roomName}" placeholder="Room Name">
+                </div>
+                <button type="button" class="btn-remove-room mb-[2px] p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors border-2 border-transparent hover:border-red-200" title="Remove Room">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+            `;
+
+            const removeBtn = inputGroup.querySelector('.btn-remove-room');
+            removeBtn.addEventListener('click', () => {
+                inputGroup.remove();
+                updateRoomLabels();
+            });
+
+            return inputGroup;
+        }
+
+        function updateRoomLabels() {
+            const labels = editRoomInputsContainer.querySelectorAll('.room-number');
+            labels.forEach((label, idx) => {
+                label.textContent = idx + 1;
+            });
+        }
 
         function openEditModal(clusterId) {
             editingClusterId = clusterId;
@@ -454,16 +485,17 @@
             editRoomInputsContainer.innerHTML = '';
             
             cluster.rooms.forEach((roomName, index) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.innerHTML = `
-                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase mb-1 tracking-wider">Room ${index + 1}</label>
-                    <input type="text" class="w-full py-2.5 px-3 sm:py-3 sm:px-4 text-base sm:text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all room-edit-input" value="${roomName}" data-index="${index}">
-                `;
-                editRoomInputsContainer.appendChild(inputGroup);
+                editRoomInputsContainer.appendChild(createRoomInputGroup(roomName, index));
             });
             
             editModal.classList.remove('hidden');
         }
+
+        btnAddRoom.addEventListener('click', () => {
+            const currentCount = editRoomInputsContainer.querySelectorAll('.room-edit-input').length;
+            editRoomInputsContainer.appendChild(createRoomInputGroup("", currentCount));
+            editRoomInputsContainer.scrollTop = editRoomInputsContainer.scrollHeight;
+        });
 
         btnCancelEdit.addEventListener('click', () => {
             editModal.classList.add('hidden');
@@ -476,16 +508,15 @@
             const cluster = clusters.find(c => c.id === editingClusterId);
             const inputs = document.querySelectorAll('.room-edit-input');
             
-            inputs.forEach(input => {
-                const idx = parseInt(input.getAttribute('data-index'));
+            const newRoomsArray = [];
+            inputs.forEach((input, idx) => {
                 const newName = input.value.trim();
-                cluster.rooms[idx] = newName || `Room ${idx + 1}`;
+                newRoomsArray.push(newName || `Room ${idx + 1}`);
             });
+            cluster.rooms = newRoomsArray;
             
-            // Save modified clusters to memory
-            localStorage.setItem('custom_clusters_v4', JSON.stringify(clusters));
+            localStorage.setItem('custom_clusters_v7', JSON.stringify(clusters));
             
-            // Refresh Setup Grid Display
             clusterGrid.innerHTML = '';
             initSetupGrid();
             
@@ -493,11 +524,8 @@
             showToast('Room names updated successfully!', false);
         });
 
-        // ==========================================
-        // UI & STATE LOGIC
-        // ==========================================
-
         function initSetupGrid() {
+            clusterGrid.innerHTML = '';
             clusters.forEach((c) => {
                 const card = document.createElement('div');
                 card.className = 'relative text-left p-4 sm:p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col h-full shadow-sm hover:shadow-md cursor-pointer group';
@@ -513,7 +541,6 @@
                         </div>
                     </div>
                     
-                    <!-- Edit Button (Shows on Hover/Focus) -->
                     <button class="edit-btn absolute top-2 right-2 sm:top-3 sm:right-3 text-gray-400 hover:text-blue-600 bg-white hover:bg-blue-50 rounded-full p-1.5 sm:p-2 transition-colors shadow-sm sm:opacity-0 sm:group-hover:opacity-100 border border-gray-200" title="Edit Rooms">
                         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
@@ -540,205 +567,155 @@
             dbPath = `exam_map_state/cluster_${cluster.id}`;
             myRoomName = null; 
             
-            // Disconnect any existing listener to prevent cross-contamination
             if (unsubscribeFirebase) {
                 unsubscribeFirebase();
             }
             
-            // Clear local state instantly to avoid ghosting
             state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
             
-            document.getElementById('display-toilet-name').textContent = cluster.toilet;
+            const levelPrefix = cluster.level !== "-" ? `LEVEL ${cluster.level} ` : "";
+            document.getElementById('display-toilet-name').textContent = `${levelPrefix}${cluster.toilet}`.toUpperCase();
             
             dynamicRoomsContainer.innerHTML = '';
+            
             cluster.rooms.forEach(roomName => {
                 const rBtn = document.createElement('button');
-                rBtn.className = 'room-btn rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center flex flex-col justify-center items-center min-h-[5.5rem] sm:min-h-[8rem] w-full';
-                rBtn.setAttribute('data-room', roomName);
-                rBtn.innerHTML = `<span class="title font-black text-gray-800 text-xl sm:text-2xl lg:text-3xl leading-tight">${roomName}</span>`;
-                
-                rBtn.addEventListener('click', () => {
-                    if (rBtn.disabled) return;
-                    if (!myRoomName) {
-                        myRoomName = roomName;
-                        showToast(`Room set to ${myRoomName}`, false);
-                        updateUI();
-                    }
-                });
+                rBtn.className = 'room-btn py-3 px-2 sm:py-4 sm:px-3 rounded-2xl font-bold flex items-center justify-center text-center relative overflow-hidden';
+                rBtn.innerHTML = `<span class="title text-sm sm:text-base z-10">${roomName}</span>`;
+                rBtn.onclick = () => selectMyRoom(roomName);
                 dynamicRoomsContainer.appendChild(rBtn);
-            });
-
-            const toiletRef = ref(db, dbPath);
-            
-            // Listen to Firebase. DO NOT blindly set() if data is null, 
-            // as this causes race conditions that overwrite other users' live data.
-            unsubscribeFirebase = onValue(toiletRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    state = { ...state, ...data };
-                } else {
-                    state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
-                }
-                updateUI();
             });
 
             setupView.classList.add('hidden');
             appView.classList.remove('hidden');
-        }
 
-        function updateState(newState) {
-            // Optimistically update local state immediately
-            state = { ...state, ...newState };
-            updateUI();
-            
-            // Push to Firebase
-            if (dbPath) {
-                set(ref(db, dbPath), state).catch(err => {
-                    showToast("Network error syncing data.", true);
-                    console.error(err);
-                });
-            }
-        }
-
-        function updateTimerDisplay() {
-            if (!state.isOccupied || !state.occupiedSince) return;
-            const diffSecs = Math.floor((Date.now() - state.occupiedSince) / 1000);
-            const mins = Math.floor(diffSecs / 60).toString().padStart(2, '0');
-            const secs = (diffSecs % 60).toString().padStart(2, '0');
-            timerDisplay.textContent = `${mins}:${secs}`;
-        }
-
-        function manageTimer() {
-            if (state.isOccupied && state.occupiedSince) {
-                timerContainer.classList.remove('hidden');
-                timerContainer.classList.add('flex');
-                updateTimerDisplay(); 
-                if (!timerInterval) {
-                    timerInterval = setInterval(updateTimerDisplay, 1000);
+            const dbRef = ref(db, dbPath);
+            unsubscribeFirebase = onValue(dbRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    state = data;
+                } else {
+                    state = { isOccupied: false, occupiedBy: null, occupiedSince: null };
                 }
-            } else {
-                timerContainer.classList.add('hidden');
-                timerContainer.classList.remove('flex');
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                }
-            }
-        }
-
-        function updateUI() {
-            const roomButtons = document.querySelectorAll('.room-btn');
-            roomButtons.forEach(r => {
-                r.classList.remove('my-room', 'other-room');
-                const roomId = r.getAttribute('data-room');
-                
-                if (state.isOccupied && state.occupiedBy === roomId && roomId !== myRoomName) {
-                    r.classList.add('other-room');
-                }
-                if (myRoomName === roomId) {
-                    r.classList.add('my-room');
-                }
+                updateWidgetUI();
             });
-
-            toiletWidget.classList.remove('status-vacant', 'status-me', 'status-other', 'disabled', 'bg-gray-200', 'border-gray-300', 'pointer-events-none');
-            
-            if (!myRoomName) {
-                statusBanner.className = "glass-panel shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-white/90 backdrop-blur-md";
-                bannerTitle.textContent = "Select Exam Room";
-                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900";
-                bannerSubtitle.textContent = "Tap your assigned room on the dashboard below to begin.";
-                bannerSubtitle.className = "text-sm sm:text-base font-semibold text-gray-500 mt-0.5";
-                
-                btnReset.classList.add('hidden');
-                document.getElementById('current-room-container').classList.add('hidden');
-                document.getElementById('current-room-container').classList.remove('flex');
-                
-                toiletWidget.classList.add('bg-gray-200', 'border-gray-300', 'pointer-events-none');
-                toiletWidget.style.pointerEvents = 'none'; 
-                widgetStatusText.textContent = "AWAITING SELECTION";
-                widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-gray-500 uppercase";
-                widgetSubText.textContent = "Please select your room from the grid below.";
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold text-gray-400 mt-0.5 sm:mt-1";
-                return; 
-            }
-
-            btnReset.classList.remove('hidden');
-            document.getElementById('current-room-container').classList.remove('hidden');
-            document.getElementById('current-room-container').classList.add('flex');
-            document.getElementById('current-room-text').textContent = myRoomName;
-            toiletWidget.style.pointerEvents = 'auto'; 
-
-            if (!state.isOccupied) {
-                statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-white/90 backdrop-blur-md border-gray-200";
-                bannerTitle.textContent = "Available";
-                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-emerald-600";
-                bannerSubtitle.textContent = "";
-                bannerSubtitle.className = "text-sm sm:text-base font-bold text-emerald-600 mt-0.5";
-                
-                toiletWidget.classList.add('status-vacant');
-                widgetStatusText.textContent = "TAP TO SEND";
-                widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
-                widgetSubText.textContent = "You may send a candidate.";
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-90 mt-0.5 sm:mt-1 drop-shadow-sm text-white";
-            } 
-            else if (state.isOccupied && state.occupiedBy === myRoomName) {
-                statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-blue-50/90 backdrop-blur-md border-blue-200";
-                bannerTitle.textContent = "Occupied";
-                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-blue-900";
-                bannerSubtitle.textContent = "";
-                bannerSubtitle.className = "text-sm sm:text-base font-bold text-blue-600 mt-0.5";
-                
-                toiletWidget.classList.add('status-me');
-                widgetStatusText.textContent = "TAP ON RETURN";
-                widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
-                widgetSubText.textContent = "Your candidate is currently at the toilet.";
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-90 mt-0.5 sm:mt-1 drop-shadow-sm text-blue-100";
-            } 
-            else if (state.isOccupied && state.occupiedBy !== myRoomName) {
-                statusBanner.className = "shadow-sm border-b p-3 sm:p-5 sticky top-0 z-50 transition-colors duration-500 bg-red-50/90 backdrop-blur-md border-red-200";
-                bannerTitle.textContent = "Occupied";
-                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-red-900";
-                bannerSubtitle.textContent = "";
-                bannerSubtitle.className = "text-sm sm:text-base font-bold text-red-600 mt-0.5";
-                
-                // Disable the widget so other users cannot click it
-                toiletWidget.classList.add('status-other', 'disabled');
-                toiletWidget.style.pointerEvents = 'none'; 
-                
-                widgetStatusText.textContent = "IN USE";
-                widgetStatusText.className = "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm uppercase text-white";
-                widgetSubText.textContent = "Do not send candidate.";
-                widgetSubText.className = "text-sm sm:text-lg lg:text-xl font-bold opacity-100 mt-0.5 sm:mt-1 drop-shadow-md text-red-100 bg-red-900/30 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg inline-block";
-            }
-
-            manageTimer();
         }
 
-        toiletWidget.addEventListener('click', () => {
-            if (!myRoomName) {
-                showToast("Please tap your Exam Room on the dashboard first.");
-                return;
-            }
-
-            if (!state.isOccupied) {
-                updateState({ isOccupied: true, occupiedBy: myRoomName, occupiedSince: Date.now() });
-                showToast("Candidate sent.", false);
-            } else if (state.isOccupied && state.occupiedBy === myRoomName) {
-                updateState({ isOccupied: false, occupiedBy: null, occupiedSince: null });
-                showToast("Candidate returned. You may send a candidate.", false);
-            }
-            // The else block is no longer accessible because pointerEvents is set to 'none' for other users
-        });
+        function selectMyRoom(roomName) {
+            if (myRoomName !== null) return; // Prevent changing room by clicking class buttons once selected
+            
+            myRoomName = roomName;
+            document.getElementById('current-room-text').textContent = myRoomName;
+            document.getElementById('current-room-container').classList.remove('hidden');
+            btnReset.classList.remove('hidden');
+            
+            bannerTitle.textContent = selectedCluster.block + " Status";
+            bannerSubtitle.textContent = "Tap the widget below to update toilet status.";
+            
+            toiletWidget.classList.remove('pointer-events-none');
+            updateWidgetUI();
+        }
 
         btnReset.addEventListener('click', () => {
             myRoomName = null;
-            updateUI();
+            document.getElementById('current-room-text').textContent = "--";
+            bannerTitle.textContent = "Select Exam Room";
+            bannerSubtitle.textContent = "Tap your assigned room on the dashboard below to begin.";
+            toiletWidget.classList.add('pointer-events-none');
+            updateWidgetUI();
         });
 
-        // Run Initial Setup
-        initSetupGrid();
-        checkAuthOnLoad();
+        toiletWidget.addEventListener('click', () => {
+            if (!myRoomName) return;
+            
+            if (state.isOccupied && state.occupiedBy !== myRoomName) {
+                showToast("Toilet is currently occupied by another room!");
+                return;
+            }
+            
+            const newState = {
+                isOccupied: !state.isOccupied,
+                occupiedBy: !state.isOccupied ? myRoomName : null,
+                occupiedSince: !state.isOccupied ? Date.now() : null
+            };
+            
+            set(ref(db, dbPath), newState).catch(err => {
+                showToast("Failed to update status. Check connection.");
+            });
+        });
 
+        function updateWidgetUI() {
+            const roomBtns = document.querySelectorAll('.room-btn');
+            roomBtns.forEach(btn => {
+                const title = btn.querySelector('.title').textContent;
+                btn.classList.remove('my-room', 'other-room');
+                btn.disabled = false;
+                
+                if (title === myRoomName) {
+                    btn.classList.add('my-room');
+                }
+                
+                if (state.isOccupied && state.occupiedBy === title) {
+                    btn.classList.add(title === myRoomName ? 'my-room' : 'other-room');
+                }
+            });
+
+            toiletWidget.className = 'status-widget w-full rounded-2xl sm:rounded-3xl border-4 shadow-lg p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-white text-center sm:text-left min-h-[140px] sm:min-h-[160px] relative z-20 transition-all';
+            
+            clearInterval(timerInterval);
+            timerContainer.classList.add('hidden');
+
+            if (!myRoomName) {
+                toiletWidget.classList.add('bg-gray-200', 'border-gray-300');
+                widgetStatusText.textContent = "AWAITING SELECTION";
+                widgetSubText.textContent = "Please select your room first.";
+                bannerTitle.textContent = "Select Exam Room";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900";
+                bannerSubtitle.classList.remove('hidden');
+            } else if (!state.isOccupied) {
+                toiletWidget.classList.add('status-vacant');
+                widgetStatusText.textContent = "TAP TO SEND";
+                widgetSubText.textContent = "You may send a candidate.";
+                bannerTitle.textContent = "Available";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-emerald-600";
+                bannerSubtitle.classList.add('hidden');
+            } else if (state.occupiedBy === myRoomName) {
+                toiletWidget.classList.add('status-me');
+                widgetStatusText.textContent = "TAP ON RETURN";
+                widgetSubText.textContent = "Your candidate is currently at the toilet.";
+                bannerTitle.textContent = "Occupied";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-blue-800";
+                bannerSubtitle.classList.add('hidden');
+                startTimer();
+            } else {
+                toiletWidget.classList.add('status-other');
+                widgetStatusText.textContent = "IN USE";
+                widgetSubText.innerHTML = "<span class='bg-black/20 px-3 py-1 rounded-lg inline-block'>Do not send candidate.</span>";
+                bannerTitle.textContent = "Occupied";
+                bannerTitle.className = "text-xl sm:text-2xl font-extrabold tracking-tight text-red-800";
+                bannerSubtitle.classList.add('hidden');
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            timerContainer.classList.remove('hidden');
+            timerContainer.classList.add('flex');
+            
+            const updateTime = () => {
+                if (!state.occupiedSince) return;
+                const diff = Math.floor((Date.now() - state.occupiedSince) / 1000);
+                const mins = Math.floor(diff / 60).toString().padStart(2, '0');
+                const secs = (diff % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${mins}:${secs}`;
+            };
+            
+            updateTime();
+            timerInterval = setInterval(updateTime, 1000);
+        }
+
+        // Initialize App
+        checkAuthOnLoad();
     </script>
 </body>
 </html>

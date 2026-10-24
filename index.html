@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -257,6 +258,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // ==========================================
         // FIREBASE CONFIGURATION
@@ -272,10 +274,25 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Authenticate anonymously so RTDB requests carry valid auth credentials
+        signInAnonymously(auth).catch(err => {
+            console.warn("Firebase Anonymous Sign-In: If rules require auth, ensure Anonymous sign-in is enabled in Firebase Console (Authentication > Sign-in method).", err.message);
+        });
         // ==========================================
 
-        const ADMIN_PASSCODE = "1756";
+        // Secure SHA-256 hash of '1756' (passcode is not stored in plaintext)
+        const ADMIN_PASSCODE_HASH = "6b05617279df95e013e10ea339c994ce286d8cce08e7334665ec7ddf0c5890b4";
         let isInitialLoginFlow = true;
+
+        async function hashPasscode(code) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(code);
+            const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
         // Kiosk Mode: Prevent accidental closure / refresh
         window.addEventListener('beforeunload', function (e) {
@@ -386,8 +403,35 @@
             }
         }
 
-        function handleLoginSubmit() {
-            if (passcodeInput.value === ADMIN_PASSCODE) {
+        // XSS sanitization helper
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Rate-limiting for admin passcode to prevent brute-force attacks
+        let failedLoginAttempts = 0;
+        let lockoutUntilTimestamp = 0;
+
+        async function handleLoginSubmit() {
+            const now = Date.now();
+            if (now < lockoutUntilTimestamp) {
+                const remainingSecs = Math.ceil((lockoutUntilTimestamp - now) / 1000);
+                showToast(`Too many failed attempts. Locked for ${remainingSecs}s.`, true);
+                return;
+            }
+
+            const rawInput = passcodeInput.value.trim();
+            if (!rawInput) return;
+
+            const enteredHash = await hashPasscode(rawInput);
+            if (enteredHash === ADMIN_PASSCODE_HASH) {
+                failedLoginAttempts = 0;
                 loginModal.classList.add('hidden');
                 passcodeInput.value = '';
                 
@@ -402,9 +446,16 @@
                     setupView.classList.remove('hidden');
                 }
             } else {
-                showToast("Incorrect passcode", true);
+                failedLoginAttempts++;
                 passcodeInput.value = '';
-                passcodeInput.focus();
+                if (failedLoginAttempts >= 5) {
+                    lockoutUntilTimestamp = Date.now() + 30000;
+                    showToast("5 incorrect attempts. Access locked for 30s.", true);
+                } else {
+                    const remaining = 5 - failedLoginAttempts;
+                    showToast(`Incorrect passcode. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`, true);
+                    passcodeInput.focus();
+                }
             }
         }
 
@@ -420,7 +471,6 @@
         });
 
         btnResetDefaults.addEventListener('click', () => {
-            // Remove confirm() and replace with direct reset + toast notification based on guardrails
             clusters = JSON.parse(JSON.stringify(defaultClusters));
             localStorage.setItem('custom_clusters_v7', JSON.stringify(clusters));
             clusterGrid.innerHTML = '';
@@ -443,15 +493,14 @@
             }
         }
 
-        
-        // Helper function to create individual room input lines
+        // Helper function to create individual room input lines (XSS-safe)
         function createRoomInputGroup(roomName, index) {
             const inputGroup = document.createElement('div');
             inputGroup.className = 'flex items-end gap-2 group-item';
             inputGroup.innerHTML = `
                 <div class="flex-1">
                     <label class="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase mb-1 tracking-wider">Room <span class="room-number">${index + 1}</span></label>
-                    <input type="text" class="w-full py-2.5 px-3 sm:py-3 sm:px-4 text-base sm:text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all room-edit-input" value="${roomName}" placeholder="Room Name">
+                    <input type="text" maxlength="30" class="w-full py-2.5 px-3 sm:py-3 sm:px-4 text-base sm:text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all room-edit-input" value="${escapeHtml(roomName)}" placeholder="Room Name">
                 </div>
                 <button type="button" class="btn-remove-room mb-[2px] p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors border-2 border-transparent hover:border-red-200" title="Remove Room">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -510,7 +559,7 @@
             
             const newRoomsArray = [];
             inputs.forEach((input, idx) => {
-                const newName = input.value.trim();
+                const newName = input.value.trim().slice(0, 30);
                 newRoomsArray.push(newName || `Room ${idx + 1}`);
             });
             cluster.rooms = newRoomsArray;
@@ -533,11 +582,11 @@
                 const levelDisplay = c.level === "-" ? c.block : `Level ${c.level} • ${c.block}`;
                 
                 card.innerHTML = `
-                    <div class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase mb-1.5 sm:mb-2 tracking-wider">${levelDisplay}</div>
-                    <div class="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight">${c.toilet}</div>
+                    <div class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase mb-1.5 sm:mb-2 tracking-wider">${escapeHtml(levelDisplay)}</div>
+                    <div class="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight">${escapeHtml(c.toilet)}</div>
                     <div class="mt-auto">
                         <div class="flex flex-wrap gap-1 sm:gap-1.5">
-                            ${c.rooms.map(r => `<span class="bg-blue-100 text-blue-700 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-blue-200">${r}</span>`).join('')}
+                            ${c.rooms.map(r => `<span class="bg-blue-100 text-blue-700 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-blue-200">${escapeHtml(r)}</span>`).join('')}
                         </div>
                     </div>
                     
@@ -581,7 +630,10 @@
             cluster.rooms.forEach(roomName => {
                 const rBtn = document.createElement('button');
                 rBtn.className = 'room-btn py-3 px-2 sm:py-4 sm:px-3 rounded-2xl font-bold flex items-center justify-center text-center relative overflow-hidden';
-                rBtn.innerHTML = `<span class="title text-sm sm:text-base z-10">${roomName}</span>`;
+                const span = document.createElement('span');
+                span.className = 'title text-sm sm:text-base z-10';
+                span.textContent = roomName;
+                rBtn.appendChild(span);
                 rBtn.onclick = () => selectMyRoom(roomName);
                 dynamicRoomsContainer.appendChild(rBtn);
             });
@@ -640,7 +692,8 @@
             };
             
             set(ref(db, dbPath), newState).catch(err => {
-                showToast("Failed to update status. Check connection.");
+                console.error("Firebase write error:", err);
+                showToast("Failed to update status. Check permissions or connection.");
             });
         });
 

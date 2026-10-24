@@ -1,0 +1,21 @@
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Scratch and backup files
+*.txt
+*.bak
+*.tmp
+database.rules.fallback.json
+
+# Environment and sensitive secrets
+.env
+.env.local
+.env.*.local
+
+# Node/IDE
+node_modules/
+.vscode/
+.idea/
+.firebase/
